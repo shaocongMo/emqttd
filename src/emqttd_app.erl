@@ -39,7 +39,9 @@
 
 start(_Type, _Args) ->
     print_banner(),
+    %% EMQ集群： 集群自动发现，集群自愈
     ekka:start(),
+    %% 开启监控树
     {ok, Sup} = emqttd_sup:start_link(),
     start_servers(Sup),
     emqttd_cli:load(),
@@ -68,6 +70,7 @@ print_vsn() ->
 %% Start Servers
 %%--------------------------------------------------------------------
 
+%% 启动相关模块
 start_servers(Sup) ->
     Servers = [{"emqttd ctl", emqttd_ctl},
                {"emqttd hook", emqttd_hooks},

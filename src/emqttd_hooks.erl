@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
-
+%% 钩子模块： 通过钩子模块，系统发生特定变化时（如客户端上线）会调用对应的钩子
 -module(emqttd_hooks).
 
 -behaviour(gen_server).
@@ -51,7 +51,7 @@ start_link() ->
 %%--------------------------------------------------------------------
 %% Hooks API
 %%--------------------------------------------------------------------
-
+%% 在HookPoint钩子上添加执行 Function(InitArgs)
 -spec(add(atom(), function() | {hooktag(), function()}, list(any())) -> ok).
 add(HookPoint, Function, InitArgs) when is_function(Function) ->
     add(HookPoint, {undefined, Function}, InitArgs, 0);
@@ -65,12 +65,14 @@ add(HookPoint, Function, InitArgs, Priority) when is_function(Function) ->
 add(HookPoint, {Tag, Function}, InitArgs, Priority) when is_function(Function) ->
     gen_server:call(?MODULE, {add, HookPoint, {Tag, Function}, InitArgs, Priority}).
 
+%% 在HookPoint钩子上删除指定函数
 -spec(delete(atom(), function() | {hooktag(), function()}) -> ok).
 delete(HookPoint, Function) when is_function(Function) ->
     delete(HookPoint, {undefined, Function});
 delete(HookPoint, {Tag, Function}) when is_function(Function) ->
     gen_server:call(?MODULE, {delete, HookPoint, {Tag, Function}}).
 
+%% 运行绑定在HookPoint钩子上的函数 运行时在原本参数上加上 Args
 %% @doc Run hooks without Acc.
 -spec(run(atom(), list(Arg :: any())) -> ok | stop).
 run(HookPoint, Args) ->
@@ -93,6 +95,7 @@ run_([], _Args) ->
 
 %% @private
 run_([#callback{function = Fun, init_args = InitArgs} | Callbacks], Args, Acc) ->
+    %% 执行钩子函数
     case apply(Fun, lists:append([Args, [Acc], InitArgs])) of
         ok             -> run_(Callbacks, Args, Acc);
         {ok, NewAcc}   -> run_(Callbacks, Args, NewAcc);
@@ -168,18 +171,22 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal functions
 %%--------------------------------------------------------------------
 
+%% 插入新钩子
 insert_hook_(HookPoint, Callbacks) ->
     ets:insert(?HOOK_TAB, #hook{name = HookPoint, callbacks = Callbacks}), ok.
 
+%% 添加函数
 add_callback_(Callback, Callbacks) ->
     lists:keymerge(#callback.priority, Callbacks, [Callback]).
 
+%% 删除钩子上的函数
 del_callback_(Tag, Function, Callbacks) ->
     lists:filter(
       fun(#callback{tag = Tag1, function = Func1}) ->
         not ((Tag =:= Tag1) andalso (Function =:= Func1))
       end, Callbacks).
 
+%% 查找 在对应钩子上已绑定的函数是否已存在同样的函数
 contain_(_Tag, _Function, []) ->
     false;
 contain_(Tag, Function, [#callback{tag = Tag, function = Function}|_Callbacks]) ->

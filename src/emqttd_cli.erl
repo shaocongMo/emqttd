@@ -13,7 +13,9 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
-
+%% emqttd_ctl 控制模块调用本模块
+%% 控制命令对应的操作详情 可查看文档v2下的 管理命令 (Commands) 
+%% http://www.emqtt.com/docs/v2/commands.html
 -module(emqttd_cli).
 
 -author("Feng Lee <feng@emqtt.io>").
@@ -34,6 +36,7 @@
          routes/1, topics/1, subscriptions/1, plugins/1, bridges/1,
          listeners/1, vm/1, mnesia/1, trace/1, acl/1]).
 
+%% 进程信息相关key: erlang:process_info(Pid, [Key...]) 
 -define(PROC_INFOKEYS, [status,
                         memory,
                         message_queue_len,
@@ -46,6 +49,7 @@
 
 -define(APP, emqttd).
 
+%% 把本模块的命令注册到emqttd_ctl中
 load() ->
     Cmds = [Fun || {Fun, _} <- ?MODULE:module_info(exports), is_cmd(Fun)],
     [emqttd_ctl:register_cmd(Cmd, {?MODULE, Cmd}, []) || Cmd <- Cmds],
@@ -60,7 +64,7 @@ is_cmd(Fun) ->
 
 %%--------------------------------------------------------------------
 %% @doc Node status
-
+%% 查看节点状态
 status([]) ->
     {InternalStatus, _ProvidedStatus} = init:get_status(),
     ?PRINT("Node ~p is ~p~n", [node(), InternalStatus]),

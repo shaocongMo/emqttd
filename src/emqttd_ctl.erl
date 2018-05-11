@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
-
+%% 对应bin目录下的 emqttd_ctl 执行调用本模块
 -module(emqttd_ctl).
 
 -behaviour(gen_server).
@@ -62,6 +62,7 @@ unregister_cmd(Cmd) ->
 
 cast(Msg) -> gen_server:cast(?SERVER, Msg).
 
+%% 运行控制命令 bin目录下执行emqttd_ctl CmdS Args 执行调用
 %% @doc Run a command
 -spec(run([string()]) -> any()).
 run([]) -> usage(), ok;
@@ -93,6 +94,7 @@ run([CmdS|Args]) ->
             {error, cmd_not_found}
     end.
 
+%% 在ets中查找控制命令对应的信息
 %% @doc Lookup a command
 -spec(lookup(atom()) -> [{module(), atom()}]).
 lookup(Cmd) ->
@@ -111,6 +113,7 @@ usage() ->
 %% gen_server callbacks
 %%--------------------------------------------------------------------
 
+%% ets表数据格式类似: {{0,status},{emqttd_cli,status},[]}
 init([]) ->
     ets:new(?CMD_TAB, [ordered_set, named_table, protected]),
     {ok, #state{seq = 0}}.
@@ -118,6 +121,7 @@ init([]) ->
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
+%% 注册控制 模块： cmd 控制命令 MF{Module, Fun}调用模块，函数 Opts 配置
 handle_cast({register_cmd, Cmd, MF, Opts}, State = #state{seq = Seq}) ->
     case ets:match(?CMD_TAB, {{'$1', Cmd}, '_', '_'}) of
         [] ->
@@ -128,6 +132,7 @@ handle_cast({register_cmd, Cmd, MF, Opts}, State = #state{seq = Seq}) ->
     end,
     noreply(next_seq(State));
 
+%% 通过Cmd控制命令 删除已注册模块
 handle_cast({unregister_cmd, Cmd}, State) ->
     ets:match_delete(?CMD_TAB, {{'_', Cmd}, '_', '_'}),
     noreply(State);

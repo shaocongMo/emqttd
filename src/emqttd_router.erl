@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
-
+%% 订阅主题路由: 主题 -> 节点
 -module(emqttd_router).
 
 -author("Feng Lee <feng@emqtt.io>").
@@ -56,6 +56,7 @@
 %% Mnesia Bootstrap
 %%--------------------------------------------------------------------
 
+%% ekka 会根据节点情况调用建表 or 复制表
 mnesia(boot) ->
     ok = ekka_mnesia:create_table(mqtt_route, [
                 {type, bag},

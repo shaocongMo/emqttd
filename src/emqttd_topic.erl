@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
-
+%% 主题处理
 -module(emqttd_topic).
 
 -author("Feng Lee <feng@emqtt.io>").
